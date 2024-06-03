@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Items Display</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 0;
+            padding: 20px;
+            max-width: 400px;
+            margin: auto;
+        }
+
+        .refresh-container {
+            margin-bottom: 20px;
+        }
+
+        .item, .dropdown-item {
+            margin: 0 0;
+            padding: 20px;
+            border: 1px solid #ccc;
+            background-color: #83ffd6;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        .item {
+            margin: 10px 0;
+            padding: 20px;
+            border: 1px solid #ccc;
+            border-radius: 20px;
+            background-color: #a0efff;
+            width: 380px;
+            box-sizing: border-box;
+            box-shadow: 4px 4px rgb(0, 156, 170);
+        }
+        .info {
+            border-bottom: 1px solid #ccc;
+            padding: 8px 0;
+        }
+
+        .info:last-child {
+            border-bottom: none;
+        }
+
+        #items-container {
+            display: none;
+        }
+
+        .loading {
+            font-size: 1.2em;
+            color: #333;
+        }
+
+        .dropdown-container {
+            margin-top: 20px;
+            width: 380px;
+            position: relative;
+            background-color: #83ffd6;
+            border-radius: 20px;
+            box-shadow: 4px 4px rgb(49, 185, 126);
+        }
+
+        .dropdown-button {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 20px;
+            border: 0px solid #ccc;
+            cursor: pointer;
+        }
+
+        .dropdown-icon {
+            margin-left: 10px;
+            transform: rotate(0deg);
+            transition: transform 0.3s ease;
+        }
+
+        .dropdown-container.active .dropdown-icon {
+            transform: rotate(180deg);
+        }
+
+        .dropdown-list {
+            max-height: 0;
+            overflow: hidden;
+            position: relative;
+            left: 0;
+            width: 100%;
+            background-color: #fff;
+            box-shadow: 0 0 0 rgba(0, 0, 0, 0.1);
+            z-index: 1;
+            transition: max-height 0.3s ease-out, padding 0.0s ease-out;
+        }
+
+        .dropdown-container.active .dropdown-list {
+            max-height: 1000px; /* This will be dynamically adjusted */
+            padding: 0 0;
+        }
+
+        .go-back-button {
+            position: -webkit-sticky;
+            position: sticky;
+            margin-right: 260px;
+            left: 20px;
+            top: 20px;
+            z-index: 2;
+            background-color: #fff;
+            padding: 10px 20px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .arrow-icon {
+            margin-right: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="go-back-button" onclick="goBack()">&#8592; Go back</div> <!-- Left arrow icon added here -->
+
+    <div class="refresh-container">
+        <button id="refresh-button">Refresh Data</button>
+    </div>
+
+    <div id="loading-indicator" class="loading">Loading data...</div>
+    
+    <div class="dropdown-container" id="dropdown-container">
+        <div class="dropdown-button" id="dropdown-button">
+            Birthday List
+            <span class="dropdown-icon">&#9660;</span>
+        </div>
+        <div class="dropdown-list" id="dropdown-list"></div>
+    </div>
+    
+    <div id="items-container"></div>
+
+    <script>
+        const spreadsheetId = '1k_gCziN4csiWt8MyBppAH67ysT2bga1-8p8Oz7A22ew';  // Replace with your actual spreadsheet ID
+        const sheetName = 'Master';  // Replace with the actual sheet name
+        const query = `SELECT *`;
+        const url = `https://docs.google.com/spreadsheets/d/${spreadsheetId}/gviz/tq?sheet=${sheetName}&tq=${encodeURIComponent(query)}`;
+
+        let dataCache = [];
+
+        const fetchData = async () => {
+            try {
+                const response = await fetch(url);
+                const text = await response.text();
+                const json = JSON.parse(text.substr(47).slice(0, -2));
+                const rows = json.table.rows;
+
+                dataCache = rows.map(row => {
+                    return {
+                        nama: row.c[0]?.v || '',
+                        nokp: row.c[1]?.v || '',
+                        parti: row.c[2]?.v || '',
+                        noahli: row.c[3]?.v || '',
+                        negeri: row.c[4]?.v || '',
+                        bahagian: row.c[5]?.v || '',
+                        cawangan: row.c[6]?.v || '',
+                        pusat: row.c[7]?.v || '',
+                        dun: row.c[8]?.v || '',
+                        status: row.c[9]?.v || '',
+                        tel: row.c[10]?.v || '',
+                        bulan: row.c[11]?.v || '',
+                        tarikh_lahir: row.c[17]?.v || '', // Assuming tarikh lahir is in the 18th column
+                        umur: row.c[12]?.v || '', // Assuming umur is in the 13th column
+                        jantina: row.c[13]?.v || '', // Assuming jantina is in the 14th column
+                        hari: row.c[14]?.v || ''
+                    };
+                });
+                
+                displayDropdown(dataCache);
+                displayItems(dataCache);
+            } catch (error) {
+                console.error('Error fetching data:', error);
+            }
+        }
+
+        const getFilterParams = () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            return {
+                umurRange: urlParams.get('umurRange'),
+                jantina: urlParams.get('jantina'),
+                pdm: urlParams.get('pdm')
+            };
+        }
+
+        const filterByUmur = (umur, range) => {
+            const age = parseInt(umur);
+            switch (range) {
+                case '18-20': return age >= 18 && age <= 20;
+                case '21-25': return age >= 21 && age <= 25;
+                case '26-30': return age >= 26 && age <= 30;
+                case '31-39': return age >= 31 && age <= 39;
+                case '40': return age === 40;
+                case '41 and above': return age >= 41;
+                default: return true;
+            }
+        }
+
+        const sortItemsByDate = (items) => {
+            return items.sort((a, b) => {
+                // Sorting by Bulan (Month)
+                const months = [
+                    'Januari', 'Februari', 'Mac', 'April', 'Mei', 'Jun',
+                    'Julai', 'Ogos', 'September', 'Oktober', 'November', 'Disember'
+                ];
+                const monthA = months.indexOf(a.bulan);
+                const monthB = months.indexOf(b.bulan);
+                
+                if (monthA !== monthB) {
+                    return monthA - monthB;
+                }
+                
+                // If Bulan is the same, sort by Hari (Day)
+                const dayA = parseInt(a.hari);
+                const dayB = parseInt(b.hari);
+                if (dayA !== dayB) {
+                    return dayA - dayB;
+                }
+
+                // If Hari are the same, sort by Umur
+                return parseInt(a.umur) - parseInt(b.umur);
+            });
+        }
+
+        const displayDropdown = (items) => {
+            const { umurRange, jantina, pdm } = getFilterParams(); // Include pdm in the filter parameters
+            const filteredItems = items.filter(item => {
+                const matchesUmur = umurRange ? filterByUmur(item.umur, umurRange) : true;
+                const matchesJantina = jantina ? item.jantina.toLowerCase() === jantina.toLowerCase() : true;
+                const matchesPDM = pdm ? item.pusat.toLowerCase() === pdm.toLowerCase() : true; // Update PDM filter
+                return matchesUmur && matchesJantina && matchesPDM;
+            });
+
+            const sortedItems = sortItemsByDate(filteredItems);
+
+            const dropdownList = document.getElementById('dropdown-list');
+            dropdownList.innerHTML = '';
+            
+            if (sortedItems.length > 0) {
+                sortedItems.forEach(item => {
+                    const dropdownDiv = document.createElement('div');
+                    dropdownDiv.classList.add('dropdown-item');
+                    dropdownDiv.innerHTML = `
+                        <div class="info"><strong>Nama:</strong> ${item.nama}</div>
+                        <div class="info"><strong>Bulan:</strong> ${item.bulan}</div>
+                        <div class="info"><strong>Hari:</strong> ${item.hari}</div>
+                        <div class="info"><strong>Umur:</strong> ${item.umur}</div>
+                    `;
+                    dropdownDiv.addEventListener('click', () => {
+                        const container = document.getElementById('items-container');
+                        container.innerHTML = '';
+
+                        const selectedItem = sortedItems.find(sortedItem => sortedItem.nama === item.nama);
+
+                        if (selectedItem) {
+                            const itemDiv = document.createElement('div');
+                            itemDiv.className = 'item';
+                            itemDiv.innerHTML = `
+                                <div class="info nama"><strong>Nama:</strong> ${selectedItem.nama}</div>
+                                <div class="info nokp"><strong>No KP:</strong> ${selectedItem.nokp}</div>
+                                <div class="info parti"><strong>Parti:</strong> ${selectedItem.parti}</div>
+                                <div class="info noahli"><strong>No Ahli:</strong> ${selectedItem.noahli}</div>
+                                <div class="info negeri"><strong>Negeri:</strong> ${selectedItem.negeri}</div>
+                                <div class="info bahagian"><strong>Bahagian:</strong> ${selectedItem.bahagian}</div>
+                                <div class="info cawangan"><strong>Cawangan:</strong> ${selectedItem.cawangan}</div>
+                                <div class="info pusat"><strong>Pusat Daerah Mengundi:</strong> ${selectedItem.pusat}</div>
+                                <div class="info dun"><strong>Dun:</strong> ${selectedItem.dun}</div>
+                                <div class="info status"><strong>Status:</strong> ${selectedItem.status}</div>
+                                <div class="info tel"><strong>Tel No:</strong> ${selectedItem.tel}</div>
+                                <div class="info bulan"><strong>Bulan Lahir:</strong> ${selectedItem.bulan}</div>
+                                <div class="info umur"><strong>Umur:</strong> ${selectedItem.umur}</div>
+                                <div class="info jantina"><strong>Jantina:</strong> ${selectedItem.jantina}</div>
+                            `;
+                            container.appendChild(itemDiv);
+                        } else {
+                            container.innerHTML = '<div>No matching item found.</div>';
+                        }
+                    });
+                    dropdownList.appendChild(dropdownDiv);
+                });
+            } else {
+                dropdownList.innerHTML = '<div>No items found for the selected criteria.</div>';
+            }
+        }
+
+        const displayItems = (items) => {
+            const { umurRange, jantina, pdm } = getFilterParams();
+            const container = document.getElementById('items-container');
+            container.innerHTML = '';
+
+            const filteredItems = items.filter(item => {
+                const matchesUmur = umurRange ? filterByUmur(item.umur, umurRange) : true;
+                const matchesJantina = jantina ? item.jantina.toLowerCase() === jantina.toLowerCase() : true;
+                const matchesPDM = pdm ? item.pusat.toLowerCase() === pdm.toLowerCase() : true; // Update PDM filter
+                return matchesUmur && matchesJantina && matchesPDM;
+            });
+
+            if (filteredItems.length === 0) {
+                container.innerHTML = '<div>No matching items found.</div>';
+            } else {
+                filteredItems.forEach(item => {
+                    const itemDiv = document.createElement('div');
+                    itemDiv.className = 'item';
+                    itemDiv.innerHTML = `
+                        <div class="info nama"><strong>Nama:</strong> ${item.nama}</div>
+                        <div class="info nokp"><strong>No KP:</strong> ${item.nokp}</div>
+                        <div class="info parti"><strong>Parti:</strong> ${item.parti}</div>
+                        <div class="info noahli"><strong>No Ahli:</strong> ${item.noahli}</div>
+                        <div class="info negeri"><strong>Negeri:</strong> ${item.negeri}</div>
+                        <div class="info bahagian"><strong>Bahagian:</strong> ${item.bahagian}</div>
+                        <div class="info cawangan"><strong>Cawangan:</strong> ${item.cawangan}</div>
+                        <div class="info pusat"><strong>Pusat Daerah Mengundi:</strong> ${item.pusat}</div>
+                        <div class="info dun"><strong>Dun:</strong> ${item.dun}</div>
+                        <div class="info status"><strong>Status:</strong> ${item.status}</div>
+                        <div class="info tel"><strong>Tel No:</strong> ${item.tel}</div>
+                        <div class="info bulan"><strong>Bulan Lahir:</strong> ${item.bulan}</div>
+                        <div class="info umur"><strong>Umur:</strong> ${item.umur}</div>
+                        <div class="info jantina"><strong>Jantina:</strong> ${item.jantina}</div>
+                    `;
+                    container.appendChild(itemDiv);
+                });
+            }
+
+            document.getElementById('loading-indicator').style.display = 'none';
+            container.style.display = 'block';
+        }
+
+        const reloadData = async () => {
+            document.getElementById('items-container').style.display = 'none';
+            document.getElementById('loading-indicator').style.display = 'block';
+            await fetchData();
+        }
+
+        document.getElementById('refresh-button').addEventListener('click', (event) => {
+            event.preventDefault();
+            reloadData();
+        });
+
+        window.addEventListener('load', () => {
+            reloadData();
+        });
+
+        document.getElementById('dropdown-button').addEventListener('click', () => {
+            const dropdownContainer = document.getElementById('dropdown-container');
+            const dropdownList = document.getElementById('dropdown-list');
+            if (dropdownContainer.classList.contains('active')) {
+                dropdownList.style.maxHeight = '0';
+                dropdownList.style.padding = '0';
+            } else {
+                dropdownList.style.maxHeight = dropdownList.scrollHeight + 'px'; // Dynamically set max-height
+                dropdownList.style.padding = '0 0';
+            }
+            dropdownContainer.classList.toggle('active');
+        });
+
+        function goBack() {
+            window.history.back();
+        }
+    </script>
+</body>
+</html>
+
+
