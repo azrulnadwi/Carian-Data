@@ -14,6 +14,8 @@
             padding: 20px;
             max-width: 400px;
             margin: auto;
+            background-color: #f4f4f4;
+        
         }
 
         .refresh-container {
@@ -36,7 +38,7 @@
             background-color: #a0efff;
             width: 380px;
             box-sizing: border-box;
-            box-shadow: 4px 4px rgb(0, 156, 170);
+            /* box-shadow: 4px 4px rgb(0, 156, 170); */
         }
         .info {
             border-bottom: 1px solid #ccc;
@@ -58,13 +60,13 @@
 
         .dropdown-container {
             margin-top: 20px;
-            margin-left: 30px;
-            margin-right: 30px;
-            width: 380px;
+            /* margin-left: 30px;
+            margin-right: 30px; */
+            /* width: 380px; */
             position: relative;
             background-color: #83ffd6;
             border-radius: 20px;
-            box-shadow: 4px 4px rgb(49, 185, 126);
+            /* box-shadow: 4px 4px rgb(49, 185, 126); */
         }
 
         .dropdown-button {
@@ -120,26 +122,43 @@
         .arrow-icon {
             margin-right: 5px;
         }
+        section {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+            font-size: 16px;
+            background-color: #fff;
+            appearance: none;
+            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path fill="none" stroke="%23555" stroke-width="2" d="M2 7 L12 17 22 7" /></svg>');
+            background-repeat: no-repeat;
+            background-position: right 10px center;
+            background-size: 12px;
+            background-color:#f7fa2a;
+        }
     </style>
 </head>
 <body>
-    <div class="go-back-button" onclick="goBack()">&#8592; return</div> <!-- Left arrow icon added here -->
+    <section>
+        <div class="go-back-button" onclick="goBack()">&#8592; return</div> <!-- Left arrow icon added here -->
 
-    <div class="refresh-container">
-        <button id="refresh-button">Refresh Data</button>
-    </div>
-
-    <div id="loading-indicator" class="loading">Loading data...</div>
-    
-    <div class="dropdown-container" id="dropdown-container">
-        <div class="dropdown-button" id="dropdown-button">
-            Birthday List
-            <span class="dropdown-icon">&#9660;</span>
+        <div class="refresh-container">
+            <button id="refresh-button">Refresh Data</button>
         </div>
-        <div class="dropdown-list" id="dropdown-list"></div>
-    </div>
-    
-    <div id="items-container"></div>
+
+        <div id="loading-indicator" class="loading">Loading data...</div>
+        
+        <div class="dropdown-container" id="dropdown-container">
+            <div class="dropdown-button" id="dropdown-button">
+                Birthday List
+                <span class="dropdown-icon">&#9660;</span>
+            </div>
+            <div class="dropdown-list" id="dropdown-list"></div>
+        </div>
+        
+        <div id="items-container"></div>
+    </section>    
 
     <script>
         const spreadsheetId = '1k_gCziN4csiWt8MyBppAH67ysT2bga1-8p8Oz7A22ew';  // Replace with your actual spreadsheet ID
