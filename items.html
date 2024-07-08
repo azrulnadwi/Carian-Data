@@ -175,7 +175,7 @@
     </section>    
 
     <script>
-        const spreadsheetId = '1k_gCziN4csiWt8MyBppAH67ysT2bga1-8p8Oz7A22ew';  // Replace with your actual spreadsheet ID
+        const spreadsheetId = '1i2hglTuhPG1deaz5XR42nrZwZ8K7t_CGa51PsxaWzAc';  // Replace with your actual spreadsheet ID
         const sheetName = 'Master';  // Replace with the actual sheet name
         const query = `SELECT *`;
         const url = `https://docs.google.com/spreadsheets/d/${spreadsheetId}/gviz/tq?sheet=${sheetName}&tq=${encodeURIComponent(query)}`;
@@ -203,7 +203,7 @@
                         status: row.c[9]?.v || '',
                         tel: row.c[10]?.v || '',
                         bulan: row.c[11]?.v || '',
-                        tarikh_lahir: row.c[17]?.v || '', // Assuming tarikh lahir is in the 18th column
+                        tarikh_lahir: row.c[15]?.v || '', // Assuming tarikh lahir is in the 18th column
                         umur: row.c[12]?.v || '', // Assuming umur is in the 13th column
                         jantina: row.c[13]?.v || '', // Assuming jantina is in the 14th column
                         hari: row.c[14]?.v || ''
